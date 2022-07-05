@@ -43,10 +43,18 @@ public class ReactiveWebSocketHandlerBean extends ReactiveHandlerBeanBase<WebSoc
                                                         "Reactive Messaging WebSocket endpoint on path: " + path);
                                     } else if (guard.prepareToEmit()) {
                                         try {
-                                            emitter.emit(new WebSocketMessage<>(b,
-                                                    () -> serverWebSocket.write(Buffer.buffer("ACK")),
-                                                    error -> onUnexpectedError(serverWebSocket, error,
-                                                            "Failed to process incoming web socket message.")));
+                                            WebSocketMessage<Buffer> m = new WebSocketMessage<Buffer>(b,
+                                                    new RequestMetadata(event.queryParams(), event.pathParams(),
+                                                            event.normalizedPath()),
+                                                    () -> {
+                                                        serverWebSocket.write(Buffer.buffer("ACK"));
+                                                    },
+                                                    error -> {
+                                                        onUnexpectedError(serverWebSocket, error,
+                                                                "Failed to process incoming web socket message.");
+                                                    });
+
+                                            emitter.emit(m);
                                         } catch (Exception error) {
                                             guard.dequeue();
                                             onUnexpectedError(serverWebSocket, error, "Emitting message failed");
@@ -71,7 +79,7 @@ public class ReactiveWebSocketHandlerBean extends ReactiveHandlerBeanBase<WebSoc
 
     @Override
     protected String key(RoutingContext context) {
-        return context.normalizedPath();
+        return context.currentRoute().getPath();
     }
 
     @Override

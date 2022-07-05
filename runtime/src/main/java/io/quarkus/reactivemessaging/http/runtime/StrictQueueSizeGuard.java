@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A non-blocking utility class to keep the amount of enqueued emissions under a certain number ({@code queueSize})
  */
-class StrictQueueSizeGuard {
+public class StrictQueueSizeGuard {
     private final int queueSize;
     private final AtomicInteger enqueued = new AtomicInteger();
 

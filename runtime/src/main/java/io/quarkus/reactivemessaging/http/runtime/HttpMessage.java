@@ -21,12 +21,13 @@ class HttpMessage<T> implements Message<T> {
     private final Consumer<Throwable> failureHandler;
     private final Metadata metadata;
 
-    HttpMessage(T payload, IncomingHttpMetadata requestMetadata, Runnable successHandler,
+    HttpMessage(T payload, IncomingHttpMetadata httpRequestMetadata, RequestMetadata requestMetadata,
+            Runnable successHandler,
             Consumer<Throwable> failureHandler) {
         this.payload = payload;
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
-        metadata = Metadata.of(requestMetadata);
+        this.metadata = Metadata.of(httpRequestMetadata, requestMetadata);
     }
 
     @Override

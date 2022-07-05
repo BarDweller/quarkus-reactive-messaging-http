@@ -41,6 +41,8 @@ import io.quarkus.gizmo.ClassOutput;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.reactivemessaging.http.runtime.BidiWebSocketHandler;
+import io.quarkus.reactivemessaging.http.runtime.QuarkusBidiWebSocketConnector;
 import io.quarkus.reactivemessaging.http.runtime.QuarkusHttpConnector;
 import io.quarkus.reactivemessaging.http.runtime.QuarkusWebSocketConnector;
 import io.quarkus.reactivemessaging.http.runtime.ReactiveHttpHandlerBean;
@@ -95,9 +97,14 @@ public class ReactiveHttpProcessor {
             CombinedIndexBuildItem indexBuildItem) {
         beanProducer.produce(new AdditionalBeanBuildItem(QuarkusHttpConnector.class));
         beanProducer.produce(new AdditionalBeanBuildItem(QuarkusWebSocketConnector.class));
+        beanProducer.produce(new AdditionalBeanBuildItem(QuarkusBidiWebSocketConnector.class));
         beanProducer.produce(new AdditionalBeanBuildItem(ReactiveHttpConfig.class));
         beanProducer.produce(new AdditionalBeanBuildItem(ReactiveHttpHandlerBean.class));
         beanProducer.produce(new AdditionalBeanBuildItem(ReactiveWebSocketHandlerBean.class));
+
+        //beanProducer.produce(new AdditionalBeanBuildItem(BidiWebSocketNexus.class));
+        beanProducer.produce(new AdditionalBeanBuildItem(BidiWebSocketHandler.class));
+        //beanProducer.produce(new AdditionalBeanBuildItem(BidiRegistry.class));
 
         beanProducer.produce(new AdditionalBeanBuildItem(JsonArrayConverter.class));
         beanProducer.produce(new AdditionalBeanBuildItem(JsonObjectConverter.class));
@@ -106,6 +113,7 @@ public class ReactiveHttpProcessor {
 
         List<HttpStreamConfig> httpConfigs = ReactiveHttpConfig.readIncomingHttpConfigs();
         List<WebSocketStreamConfig> wsConfigs = ReactiveHttpConfig.readIncomingWebSocketConfigs();
+        List<WebSocketStreamConfig> bidiWsConfigs = ReactiveHttpConfig.readIncomingBidiWebSocketConfigs();
 
         if (!httpConfigs.isEmpty()) {
             Handler<RoutingContext> handler = recorder.createHttpHandler();
@@ -125,6 +133,16 @@ public class ReactiveHttpProcessor {
                     .map(WebSocketStreamConfig::path)
                     .distinct()
                     .forEach(path -> routeProducer.produce(RouteBuildItem.builder().route(path).handler(handler).build()));
+        }
+        if (!bidiWsConfigs.isEmpty()) {
+            Handler<RoutingContext> handler = recorder.createBidiWebSocketHandler();
+
+            bidiWsConfigs.stream()
+                    .map(WebSocketStreamConfig::path)
+                    .distinct()
+                    .forEach(path -> {
+                        routeProducer.produce(RouteBuildItem.builder().route(path).handler(handler).build());
+                    });
         }
 
         initSerializers(ReactiveHttpConfig.readSerializers(), generatedBeanProducer);

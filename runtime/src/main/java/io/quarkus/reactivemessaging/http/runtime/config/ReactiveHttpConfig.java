@@ -14,6 +14,7 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
+import io.quarkus.reactivemessaging.http.runtime.QuarkusBidiWebSocketConnector;
 import io.quarkus.reactivemessaging.http.runtime.QuarkusHttpConnector;
 import io.quarkus.reactivemessaging.http.runtime.QuarkusWebSocketConnector;
 
@@ -34,6 +35,7 @@ public class ReactiveHttpConfig {
 
     private List<HttpStreamConfig> httpConfigs;
     private List<WebSocketStreamConfig> websocketConfigs;
+    private List<WebSocketStreamConfig> bidiWebsocketConfigs;
 
     /**
      * @return list of http stream configurations
@@ -49,10 +51,18 @@ public class ReactiveHttpConfig {
         return websocketConfigs;
     }
 
+    /**
+     * @return list of web socket stream configurations
+     */
+    public List<WebSocketStreamConfig> getBidiWebSocketConfigs() {
+        return bidiWebsocketConfigs;
+    }
+
     @PostConstruct
     void init() {
         httpConfigs = readIncomingHttpConfigs();
         websocketConfigs = readIncomingWebSocketConfigs();
+        bidiWebsocketConfigs = readIncomingBidiWebSocketConfigs();
     }
 
     /**
@@ -93,6 +103,28 @@ public class ReactiveHttpConfig {
                 String path = getConfigProperty(IN_KEY, connectorName, "path", String.class);
                 int bufferSize = getConfigProperty(IN_KEY, connectorName, "buffer-size",
                         QuarkusWebSocketConnector.DEFAULT_SOURCE_BUFFER, Integer.class);
+                streamConfigs.add(new WebSocketStreamConfig(path, bufferSize));
+            }
+        }
+        return streamConfigs;
+    }
+
+    /**
+     * Reads web socket config, can be used in the build time
+     * 
+     * @return list of web socket configurations
+     */
+    public static List<WebSocketStreamConfig> readIncomingBidiWebSocketConfigs() {
+        List<WebSocketStreamConfig> streamConfigs = new ArrayList<>();
+        Config config = ConfigProviderResolver.instance().getConfig();
+        for (String propertyName : config.getPropertyNames()) {
+            String connectorName = getConnectorNameIfMatching(IN_PATTERN, propertyName, IN_KEY, MP_MSG_IN,
+                    QuarkusBidiWebSocketConnector.NAME);
+
+            if (connectorName != null) {
+                String path = getConfigProperty(IN_KEY, connectorName, "path", String.class);
+                int bufferSize = getConfigProperty(IN_KEY, connectorName, "buffer-size",
+                        QuarkusBidiWebSocketConnector.DEFAULT_SOURCE_BUFFER, Integer.class);
                 streamConfigs.add(new WebSocketStreamConfig(path, bufferSize));
             }
         }

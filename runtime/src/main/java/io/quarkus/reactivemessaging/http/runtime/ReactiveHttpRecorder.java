@@ -8,6 +8,11 @@ import io.vertx.ext.web.RoutingContext;
 @Recorder
 public class ReactiveHttpRecorder {
 
+    public Handler<RoutingContext> createBidiWebSocketHandler() {
+        BidiRegistry br = Arc.container().instance(BidiRegistry.class).get();
+        return new BidiWebSocketHandler(br);
+    }
+
     public Handler<RoutingContext> createWebSocketHandler() {
         ReactiveWebSocketHandlerBean bean = Arc.container().instance(ReactiveWebSocketHandlerBean.class).get();
         return new ReactiveWebSocketHandler(bean);

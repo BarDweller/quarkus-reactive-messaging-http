@@ -7,17 +7,27 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.Metadata;
 
 class WebSocketMessage<PayloadType> implements Message<PayloadType> {
 
     private final PayloadType payload;
     private final Runnable successHandler;
     private final Consumer<Throwable> failureHandler;
+    private final Metadata metadata;
 
-    WebSocketMessage(PayloadType payload, Runnable successHandler, Consumer<Throwable> failureHandler) {
+    WebSocketMessage(PayloadType payload, RequestMetadata requestMetadata,
+            Runnable successHandler,
+            Consumer<Throwable> failureHandler) {
         this.payload = payload;
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
+        this.metadata = Metadata.of(requestMetadata);
+    }
+
+    @Override
+    public Metadata getMetadata() {
+        return metadata;
     }
 
     @Override
@@ -40,4 +50,5 @@ class WebSocketMessage<PayloadType> implements Message<PayloadType> {
             return CompletableFuture.completedFuture(null);
         };
     }
+
 }
