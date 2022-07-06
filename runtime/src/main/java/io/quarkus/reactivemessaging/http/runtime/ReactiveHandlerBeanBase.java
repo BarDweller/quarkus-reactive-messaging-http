@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
+import io.quarkus.reactivemessaging.http.runtime.AuthenticatorProvider.Authenticator;
 import io.quarkus.reactivemessaging.http.runtime.config.StreamConfigBase;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.subscription.BackPressureStrategy;
@@ -21,12 +23,15 @@ abstract class ReactiveHandlerBeanBase<ConfigType extends StreamConfigBase, Mess
         configs().forEach(this::addProcessor);
     }
 
+    @Inject
+    AuthenticatorProvider.Authenticator auth;
+
     void handle(RoutingContext event) {
         Bundle<MessageType> bundle = processors.get(key(event));
         if (bundle != null) {
             MultiEmitter<? super MessageType> emitter = bundle.emitter;
             StrictQueueSizeGuard guard = bundle.guard;
-            handleRequest(event, emitter, guard, bundle.path);
+            handleRequest(event, emitter, guard, bundle.path, bundle.auth);
         } else {
             event.response().setStatusCode(404).end();
         }
@@ -42,6 +47,7 @@ abstract class ReactiveHandlerBeanBase<ConfigType extends StreamConfigBase, Mess
                 .onItem().invoke(guard::dequeue);
         bundle.setProcessor(processor);
         bundle.setPath(streamConfig.path);
+        bundle.setAuthenticator(auth);
 
         Bundle<MessageType> previousProcessor = processors.put(key(streamConfig), bundle);
         if (previousProcessor != null) {
@@ -50,7 +56,7 @@ abstract class ReactiveHandlerBeanBase<ConfigType extends StreamConfigBase, Mess
     }
 
     protected abstract void handleRequest(RoutingContext event, MultiEmitter<? super MessageType> emitter,
-            StrictQueueSizeGuard guard, String path);
+            StrictQueueSizeGuard guard, String path, Authenticator auth);
 
     protected abstract String description(ConfigType streamConfig);
 
@@ -65,6 +71,7 @@ abstract class ReactiveHandlerBeanBase<ConfigType extends StreamConfigBase, Mess
         private Multi<MessageType> processor; // effectively final
         private MultiEmitter<? super MessageType> emitter; // effectively final
         private String path;
+        private Authenticator auth;
 
         private Bundle(StrictQueueSizeGuard guard) {
             this.guard = guard;
@@ -84,6 +91,14 @@ abstract class ReactiveHandlerBeanBase<ConfigType extends StreamConfigBase, Mess
 
         public void setPath(String path) {
             this.path = path;
+        }
+
+        public void setAuthenticator(Authenticator auth) {
+            this.auth = auth;
+        }
+
+        public Authenticator getAuthenticator() {
+            return auth;
         }
     }
 }

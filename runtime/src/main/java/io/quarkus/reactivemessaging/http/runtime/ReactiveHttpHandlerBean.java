@@ -7,6 +7,7 @@ import javax.inject.Singleton;
 
 import org.jboss.logging.Logger;
 
+import io.quarkus.reactivemessaging.http.runtime.AuthenticatorProvider.Authenticator;
 import io.quarkus.reactivemessaging.http.runtime.config.HttpStreamConfig;
 import io.quarkus.reactivemessaging.http.runtime.config.ReactiveHttpConfig;
 import io.smallrye.mutiny.Multi;
@@ -52,7 +53,15 @@ public class ReactiveHttpHandlerBean extends ReactiveHandlerBeanBase<HttpStreamC
 
     @Override
     protected void handleRequest(RoutingContext event, MultiEmitter<? super HttpMessage<?>> emitter,
-            StrictQueueSizeGuard guard, String path) {
+            StrictQueueSizeGuard guard, String path, Authenticator auth) {
+
+        if (auth != null) {
+            if (!auth.allow(event)) {
+                event.end();
+                return;
+            }
+        }
+
         if (emitter == null) {
             onUnexpectedError(event, null,
                     "No consumer subscribed for messages sent to Reactive Messaging HTTP endpoint on path: " + path);

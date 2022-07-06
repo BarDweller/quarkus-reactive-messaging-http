@@ -41,6 +41,7 @@ import io.quarkus.gizmo.ClassOutput;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.reactivemessaging.http.runtime.AuthenticatorProvider;
 import io.quarkus.reactivemessaging.http.runtime.BidiWebSocketHandler;
 import io.quarkus.reactivemessaging.http.runtime.QuarkusBidiWebSocketConnector;
 import io.quarkus.reactivemessaging.http.runtime.QuarkusHttpConnector;
@@ -105,6 +106,7 @@ public class ReactiveHttpProcessor {
         //beanProducer.produce(new AdditionalBeanBuildItem(BidiWebSocketNexus.class));
         beanProducer.produce(new AdditionalBeanBuildItem(BidiWebSocketHandler.class));
         //beanProducer.produce(new AdditionalBeanBuildItem(BidiRegistry.class));
+        beanProducer.produce(new AdditionalBeanBuildItem(AuthenticatorProvider.class));
 
         beanProducer.produce(new AdditionalBeanBuildItem(JsonArrayConverter.class));
         beanProducer.produce(new AdditionalBeanBuildItem(JsonObjectConverter.class));

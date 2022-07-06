@@ -7,6 +7,7 @@ import javax.inject.Singleton;
 
 import org.jboss.logging.Logger;
 
+import io.quarkus.reactivemessaging.http.runtime.AuthenticatorProvider.Authenticator;
 import io.quarkus.reactivemessaging.http.runtime.config.ReactiveHttpConfig;
 import io.quarkus.reactivemessaging.http.runtime.config.WebSocketStreamConfig;
 import io.smallrye.mutiny.Multi;
@@ -28,7 +29,15 @@ public class ReactiveWebSocketHandlerBean extends ReactiveHandlerBeanBase<WebSoc
 
     @Override
     protected void handleRequest(RoutingContext event, MultiEmitter<? super WebSocketMessage<?>> emitter,
-            StrictQueueSizeGuard guard, String path) {
+            StrictQueueSizeGuard guard, String path, Authenticator auth) {
+
+        if (auth != null) {
+            if (!auth.allow(event)) {
+                event.end();
+                return;
+            }
+        }
+
         event.request().toWebSocket(
                 webSocket -> {
                     if (webSocket.failed()) {

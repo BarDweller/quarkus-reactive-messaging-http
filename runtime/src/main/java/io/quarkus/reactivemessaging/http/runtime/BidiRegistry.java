@@ -8,6 +8,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import io.quarkus.reactivemessaging.http.runtime.AuthenticatorProvider.Authenticator;
 import io.quarkus.reactivemessaging.http.runtime.config.ReactiveHttpConfig;
 import io.quarkus.reactivemessaging.http.runtime.config.WebSocketStreamConfig;
 import io.quarkus.reactivemessaging.http.runtime.serializers.SerializerFactoryBase;
@@ -22,6 +23,9 @@ public class BidiRegistry {
 
     @Inject
     SerializerFactoryBase serializerFactory;
+
+    @Inject
+    Authenticator auth;
 
     private final Map<String, BidiWebSocketNexus> knownNexuses = new HashMap<>();
 
@@ -49,7 +53,7 @@ public class BidiRegistry {
     private void addProcessor(WebSocketStreamConfig streamConfig) {
         StrictQueueSizeGuard guard = new StrictQueueSizeGuard(streamConfig.bufferSize);
 
-        BidiWebSocketNexus nexus = new BidiWebSocketNexus(guard, serializerFactory);
+        BidiWebSocketNexus nexus = new BidiWebSocketNexus(guard, serializerFactory, auth);
 
         Multi<WebSocketMessage<?>> processor = Multi.createFrom()
                 // emitter with an unbounded queue, we control the size ourselves, with the guard

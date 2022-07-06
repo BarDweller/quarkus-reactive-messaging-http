@@ -10,6 +10,7 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.jboss.logging.Logger;
 
+import io.quarkus.reactivemessaging.http.runtime.AuthenticatorProvider.Authenticator;
 import io.quarkus.reactivemessaging.http.runtime.serializers.Serializer;
 import io.quarkus.reactivemessaging.http.runtime.serializers.SerializerFactoryBase;
 import io.smallrye.mutiny.Multi;
@@ -32,11 +33,13 @@ public class BidiWebSocketNexus {
     private final CopyOnWriteArraySet<ServerWebSocket> connections;
 
     private final SerializerFactoryBase serializerFactoryBase;
+    private final Authenticator auth;
 
-    public BidiWebSocketNexus(StrictQueueSizeGuard guard, SerializerFactoryBase serializerFactoryBase) {
+    public BidiWebSocketNexus(StrictQueueSizeGuard guard, SerializerFactoryBase serializerFactoryBase, Authenticator auth) {
         this.guard = guard;
         this.connections = new CopyOnWriteArraySet<>();
         this.serializerFactoryBase = serializerFactoryBase;
+        this.auth = auth;
     }
 
     public void setProcessor(Multi<WebSocketMessage<?>> processor) {
@@ -58,6 +61,12 @@ public class BidiWebSocketNexus {
     public void handle(RoutingContext event) {
         //event is an incoming websocket.. 
         // - accept it, and hook it's messages to the outbound channel
+        if (auth != null) {
+            if (!auth.allow(event)) {
+                event.end();
+                return;
+            }
+        }
 
         event.request().toWebSocket(
                 webSocket -> {

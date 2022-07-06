@@ -21,6 +21,7 @@ import io.smallrye.reactive.messaging.annotations.ConnectorAttribute;
  * Quarkus-specific reactive messaging connector for Bidirectional WebSockets
  */
 @ConnectorAttribute(name = "incoming-path", type = "string", direction = OUTGOING, description = "The path of the corresponding incoming websocket", mandatory = true)
+@ConnectorAttribute(name = "serializer", type = "string", direction = OUTGOING, description = "Message serializer")
 
 @ConnectorAttribute(name = "path", type = "string", direction = INCOMING, description = "The path of the endpoint", mandatory = true)
 @ConnectorAttribute(name = "buffer-size", type = "string", direction = INCOMING, description = "Web socket endpoint buffers messages if a consumer is not able to keep up. This setting specifies the size of the buffer.", defaultValue = QuarkusHttpConnector.DEFAULT_SOURCE_BUFFER_STR)
